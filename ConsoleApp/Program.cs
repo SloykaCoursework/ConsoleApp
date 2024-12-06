@@ -1,8 +1,11 @@
 ﻿using ConsoleApp;
 using CourseWorkLibrary;
 using CourseWorkLibrary.DataApi;
+using RabbitMQ.Client.Events;
+using RabbitMQ.Client;
 using System;
 using System.Threading.Tasks;
+using System.Text;
 
 const string address = "127.0.0.1";
 const string port = "5555";
@@ -20,18 +23,41 @@ while (true)
 
     var userApi = new DataApiClient(client);
     await ManageResult(userApi, command ?? CommandCode.CreateData);
-    client.Dispose();
 
     Console.ReadKey();
+    client.Dispose();
 
 }
 
 static async Task ManageResult(IDataApi dataApi, CommandCode command)
 {
-
+    
     var result = await dataApi.SendCommand(command);
 
-    Console.WriteLine($"{result}");
+    Console.WriteLine($"token = {result}");
+
+    var factory = new ConnectionFactory { HostName = "localhost" };
+    using var connection = await factory.CreateConnectionAsync();
+    using var channel = await connection.CreateChannelAsync();
+
+    await channel.QueueDeclareAsync(queue: result, durable: true, exclusive: false, autoDelete: false, arguments: null);
+
+    bool isRecive = false;
+
+    var consumer = new AsyncEventingBasicConsumer(channel);
+    consumer.ReceivedAsync += (model, ea) =>
+    {
+        var body = ea.Body.ToArray();
+        var message = Encoding.UTF8.GetString(body);
+        Console.WriteLine(message);
+        isRecive = true;
+        return Task.CompletedTask;
+    };
+
+    while (!isRecive)
+    {
+        await channel.BasicConsumeAsync(result, autoAck: true, consumer: consumer);
+    }
 
 }
 
@@ -50,7 +76,7 @@ static CommandCode? PrintMenu()
             $"{((int)CommandCode.FindOldestStudent)} - {CommandCode.FindOldestStudent}\n" +
             $"{((int)CommandCode.FindYoungerInstructor)} - {CommandCode.FindYoungerInstructor}\n" +
             $"0 - Exit\n\n" +
-                            $"Chouse command: ");
+            $"Chouse command: ");
 
         if (int.TryParse(Console.ReadLine(), out int res))
         {

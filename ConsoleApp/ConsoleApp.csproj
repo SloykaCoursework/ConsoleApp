@@ -8,6 +8,7 @@
 	
 	<ItemGroup>
 		<PackageReference Include="CourseworkLibrary" Version="1.1.0" />
+		<PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
 	</ItemGroup>	
 
 </Project>
