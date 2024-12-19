@@ -7,7 +7,7 @@ using System;
 using System.Threading.Tasks;
 using System.Text;
 
-const string address = "127.0.0.1";
+const string address = "192.168.1.20";
 const string port = "5555";
 
 while (true)
@@ -36,7 +36,7 @@ static async Task ManageResult(IDataApi dataApi, CommandCode command)
 
     Console.WriteLine($"token = {result}");
 
-    var factory = new ConnectionFactory { HostName = "localhost" };
+    var factory = new ConnectionFactory { HostName = "192.168.1.35" };
     using var connection = await factory.CreateConnectionAsync();
     using var channel = await connection.CreateChannelAsync();
 
